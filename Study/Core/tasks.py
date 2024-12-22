@@ -412,8 +412,8 @@ def time_in_twelve(time: str) -> str:
 def time_plus_min(time: str, minute: str) -> str:
     hh, mm = map(int, time.split(':'))
 
-    min = int(minute)
-    mm += min
+    _min = int(minute)
+    mm += _min
 
     if mm > 59:
         hh += mm // 60
