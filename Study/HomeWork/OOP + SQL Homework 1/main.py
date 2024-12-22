@@ -1,5 +1,4 @@
 from user import User
-from db_setup import DBSetup
 from application import Application
 from db_manager import DBManager
 
