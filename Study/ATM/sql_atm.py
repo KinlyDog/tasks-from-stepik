@@ -39,8 +39,8 @@ class SqlAtm:
 
             print("Создание нового пользователя")
 
-    # Ввод и проверка номера карты \\ дополнить
-    def input_card(self, number_card: int) -> Optional[Card]:
+    # Ввод и проверка номера карты
+    def input_card(self, number_card: int) -> Optional[Tuple]:
         with self.connect() as db:
             cur = db.cursor()
 
@@ -50,41 +50,41 @@ class SqlAtm:
                     WHERE Number_card = ?
                     """, (number_card,))
 
-            return Card(*cur.fetchone())
+            return cur.fetchone()
 
     # Снятие денежных средств с баланса карты
     def cash_withdrawal(self, card: Card, amount_cash: int) -> Card:
         with self.connect() as db:
             cur = db.cursor()
 
-            new_amount = card.balance - amount_cash
+            new_balance = card.balance - amount_cash
 
             cur.execute("""
                         UPDATE Users_data
                         SET Balance = ?
                         WHERE Number_card = ?
-                        """, (new_amount, card.number,))
+                        """, (new_balance, card.number,))
             db.commit()
 
-            return Card(card.user_id, card.number, card.pin, card.balance)
+            return Card(card.user_id, card.number, card.pin, new_balance)
 
 
-# Снятие денежных средств с баланса карты
-@staticmethod
-def depositing_money(number_card: int) -> bool:
-    amount = input('Введите пожалуйста сумму которую желаете внести: ')
+    # Снятие денежных средств с баланса карты
+    @staticmethod
+    def depositing_money(number_card: int) -> bool:
+        amount = input('Введите пожалуйста сумму которую желаете внести: ')
 
-    with sqlite3.connect('atm.db') as db:
-        try:
-            cur = db.cursor()
+        with sqlite3.connect('atm.db') as db:
+            try:
+                cur = db.cursor()
 
-            cur.execute("""
-                                UPDATE Users_data
-                                SET Balance = Balance + ?
-                                WHERE Number_card = ?
-                                """, (amount, number_card,))
-            db.commit()
-            SqlAtm.info_balance(number_card)
-        except:
-            print('Попытка выполнить некорректное действие')
-            return False
+                cur.execute("""
+                                    UPDATE Users_data
+                                    SET Balance = Balance + ?
+                                    WHERE Number_card = ?
+                                    """, (amount, number_card,))
+                db.commit()
+                SqlAtm.info_balance(number_card)
+            except:
+                print('Попытка выполнить некорректное действие')
+                return False

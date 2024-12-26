@@ -1,53 +1,22 @@
+from Study.ATM.security import Security
 from sql_atm import SqlAtm
 from card import Card
 
 
-# toDo: Попробовать реализовать добавление класса карты непосредственно в конструктор.
-# toDo: Возможно придется поменять реализацию, запрашивать сразу номер карты и пароль (эмуляция банкомата)
-
 class ATM:
-    # Добавляем менеджера для работы с БД
     def __init__(self, db_manager: SqlAtm):
         self.db = db_manager
+        self.security = Security(db_manager)
+        self.card = None
 
     def start(self):
-        card = self.input_number()
+        # Запуск процесса аутентификации
+        self.card = self.security.authenticate()
 
-        if self.input_pin(card.pin):
-            self.input_operation(card)
-
-    @staticmethod
-    def input_pin(card_pin: int) -> bool:
-        while True:
-            input_pin = input('Введите пин-код.\n'
-                              'Для завершения обслуживания введите "x":\n')
-
-            if input_pin == 'x':
-                return False
-
-            if input_pin == str(card_pin):
-                return True
-
-            print('Введен некорректный пин-код.')
-
-    # Добавить тип возвращаемого значения
-    def input_number(self) -> Card:
-        while True:
-            card = None
-
-            number_card = input('Введите номер карты.\n'
-                                'Для завершения обслуживания введите "x":\n')
-
-            if number_card == 'x':
-                quit()  # переписать
-
-            if number_card.isdigit() and len(number_card) == 4:
-                card = self.db.input_card(int(number_card))
-
-            if card is Card:
-                return card
-
-            print('Введен некорректный номер карты.')
+        if self.card:
+            self.input_operation()  # Если аутентификация успешна, продолжаем
+        else:
+            print("Аутентификация не удалась.")
 
     # Выбор операции
     @staticmethod
@@ -56,7 +25,7 @@ class ATM:
               '1. Узнать баланс\n'
               '2. Снять денежные средства\n'
               '3. Внести денежные средства\n'
-              '4. Завершить работу\n'
+              'x. Завершить работу\n'
               '5.\n'
               '6.\n')
 
@@ -65,49 +34,64 @@ class ATM:
         print('Спасибо за ваш визит. Всего доброго!')
 
     # Выбор операции
-    def input_operation(self, card: Card) -> bool:
+    def input_operation(self) -> None:
         self.welcome()
+        operation = input()
 
-        while True:
+        while operation not in ('1', '2', '3', 'x'):
+            print('Данная операция недоступна. Попробуйте другой ввод.\n')
             operation = input()
 
-            if operation == '1':
-                print(f'Ваш баланс: {card.balance}')
-                return True
+        if operation == 'x':
+            return self.goodbye()
 
-            if operation == '2':
-                return self.cash_withdrawal(card)
+        if operation == '1':
+            self.balance()
 
-            if operation == '3':
-                self.depositing_cash(card)
-                return True
+        if operation == '2':
+            self.cash_withdrawal()
 
-            if operation == 'x':
-                self.goodbye()
-                return False
+        if operation == '3':
+            self.depositing_cash(self.card)
 
-            else:
-                print('Данная операция недоступна. Попробуйте другой ввод.')
+    def balance(self) -> None:
+        print(f'Ваш баланс: {self.card.balance}\n')
+        self.menu()
 
-    def cash_withdrawal(self, card) -> bool:
+    def menu(self) -> None:
+        print('Выберите нужный раздел:\n'
+              '1. Вернуться в главное меню.\n'
+              'x. Завершить обслуживание')
+
+        while True:
+            op = input()
+
+            if op == '1':
+                return self.input_operation()
+
+            if op == 'x':
+                return self.goodbye()
+
+            print('Данная операция недоступна. Попробуйте другой ввод.')
+
+    def cash_withdrawal(self) -> bool:
         amount_cash = self.correct_input_cash()
 
-        if amount_cash > card.balance:
-            print('На вашей карте недостаточно денежных средств.')
-            return False
+        self.card = self.db.cash_withdrawal(self.card, amount_cash)
+        self.balance()
+        return True
 
-        return self.db.cash_withdrawal(card, amount_cash)
-
-    @staticmethod
-    def correct_input_cash() -> int:
+    def correct_input_cash(self) -> int:
         while True:
             amount_cash = input('Введите, пожалуйста, сумму которую хотите снять:\n')
 
-            if not amount_cash.isdigit():
+            if not amount_cash.isdigit() or int(amount_cash) < 1:
                 print('Вы ввели некорректную сумму.')
 
-            if int(amount_cash) > 0:
+            if int(amount_cash) < self.card.balance:
                 return int(amount_cash)
+
+            print('На вашей карте недостаточно денежных средств.')
 
     def depositing_cash(self, card):
         pass
@@ -128,7 +112,3 @@ class ATM:
                     break
             else:
                 break
-
-
-start = ATM()
-start.atm_logic()
