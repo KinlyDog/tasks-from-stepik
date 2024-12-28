@@ -3,10 +3,11 @@ from sql_atm import SqlAtm
 from typing import Optional
 
 
+# Класс безопасности, для аутентификации
 class Security:
-    # Добавляем менеджера для работы с БД
-    def __init__(self, db_manager: SqlAtm):
-        self.db = db_manager
+    # Добавляем класс для работы с БД
+    def __init__(self, sql_atm: SqlAtm):
+        self.db = sql_atm
 
     def authenticate(self) -> Optional[Card]:
         # Логика аутентификации (получение номера карты и пин-кода)
@@ -18,17 +19,18 @@ class Security:
         if self.input_pin(card.pin):
             return card
 
-    # Возможно стоит добавить проверку на корректность
     def input_number(self) -> Optional[Card]:
-        for _ in range(3):
-            result = None
+        result = None
+        print('Добро пожаловать!')
 
-            number_card = input('Введите номер карты:\n')
+        for _ in range(3):
+            print('Введите номер карты:')
+            number_card = input().strip()
 
             if number_card.isdigit() and len(number_card) == 4:
                 result = self.db.input_card(int(number_card))
 
-            if result is not None:
+            if result:
                 return Card(*result)
 
             print('Введен некорректный номер карты.')
