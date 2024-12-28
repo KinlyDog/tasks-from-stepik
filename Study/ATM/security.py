@@ -9,8 +9,8 @@ class Security:
     def __init__(self, sql_atm: SqlAtm):
         self.db = sql_atm
 
+    # Логика аутентификации (получение номера карты и пин-кода)
     def authenticate(self) -> Optional[Card]:
-        # Логика аутентификации (получение номера карты и пин-кода)
         card = self.input_number()
 
         if card is None:
@@ -19,6 +19,7 @@ class Security:
         if self.input_pin(card.pin):
             return card
 
+    # Ввод номера карты (3 попытки)
     def input_number(self) -> Optional[Card]:
         result = None
         print('Добро пожаловать!')
@@ -38,6 +39,7 @@ class Security:
         print('Сожалеем, но количество попыток ввода исчерпано.')
         return None
 
+    # Ввод пин-кода карты (3 попытки)
     @staticmethod
     def input_pin(card_pin: int) -> bool:
         for _ in range(3):
